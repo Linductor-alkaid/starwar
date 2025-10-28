@@ -28,10 +28,26 @@
 
 ## 🛠️ 技术栈
 
+### 前端
 - HTML5 Canvas
 - JavaScript (ES6+)
 - CSS3 动画效果
 - 响应式设计
+
+### 后端（开发中）
+- Spring Boot 2.x
+- MySQL 8.0
+- MyBatis
+- JWT 认证
+
+## 📚 项目文档
+
+完整的中文开发文档请参考：[docs/README.md](docs/README.md)
+
+包括：
+- 📖 [快速开始指南](docs/快速开始指南.md)
+- 📖 [后端开发说明文档](docs/后端开发说明文档.md)
+- 🗄️ [数据库脚本](docs/database/init.sql)
 
 ## 📱 设备支持
 
