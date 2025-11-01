@@ -1,0 +1,121 @@
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* 全局工具类 */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* 星星动画 - 全局样式，供动态元素使用 */
+@keyframes star-twinkle {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* 轨道运动 - 星星围绕固定点做椭圆形轨道运动（类似引力效果） */
+@keyframes star-orbit {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(10px, -8px);
+  }
+  50% {
+    transform: translate(0, -15px);
+  }
+  75% {
+    transform: translate(-10px, -8px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* 缓慢呼吸运动 - 星星在固定点附近缓慢移动 */
+@keyframes star-breathe {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(8px, -6px);
+  }
+  50% {
+    transform: translate(0, -12px);
+  }
+  75% {
+    transform: translate(-8px, -6px);
+  }
+}
+
+/* 向下缓慢移动 - 用于游戏界面 */
+@keyframes star-fall-game {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(600px);
+  }
+}
+
