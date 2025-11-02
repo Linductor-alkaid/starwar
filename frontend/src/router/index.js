@@ -19,13 +19,13 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/auth/Login.vue'),
+    component: () => import('@/views/auth/Auth.vue'),
     meta: { title: '登录', requiresAuth: false }
   },
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/auth/Register.vue'),
+    component: () => import('@/views/auth/Auth.vue'),
     meta: { title: '注册', requiresAuth: false }
   },
   {
@@ -67,7 +67,7 @@ router.beforeEach((to, from, next) => {
     if (!token) {
       next({
         path: '/login',
-        query: { redirect: to.fullPath }
+        query: { redirect: to.fullPath, tab: 'login' }
       })
     } else {
       next()

@@ -1,17 +1,111 @@
 <template>
   <div class="game-page">
-    <div class="game-container">
-      <div class="stars" ref="starsContainer"></div>
-      <canvas ref="gameCanvas" width="800" height="600"></canvas>
-      
-      <div class="game-ui">
-        <div class="score">得分: <span>{{ formatScore(score) }}</span></div>
-        <div class="health">生命值:</div>
-        <div class="health-bar">
-          <div class="health-fill" :style="{ width: health + '%' }"></div>
+    <!-- 驾驶舱背景框架 -->
+    <div class="cockpit-frame">
+      <!-- 顶部仪表盘 -->
+      <div class="cockpit-top">
+        <div class="hud-line top-line"></div>
+        <div class="corner-decor corner-top-left"></div>
+        <div class="corner-decor corner-top-right"></div>
+        <div class="hud-scanline"></div>
+        
+        <!-- 仪表盘信息 -->
+        <div class="dashboard-info" :class="{ 'low-health-warning': isLowHealth }">
+          <!-- 生命值显示 -->
+          <div class="info-item health-display">
+            <span class="info-label">生命值</span>
+            <span class="info-value" :class="{ 'low-health': isLowHealth }">
+              {{ health }}%
+            </span>
+            <div class="health-bar-dashboard">
+              <div class="health-fill-dashboard" :style="{ width: health + '%' }"></div>
+            </div>
+          </div>
+          
+          <!-- 速度显示 -->
+          <div class="info-item speed-display">
+            <span class="info-label">速度</span>
+            <span class="info-value" :class="{ 'high-speed': Math.abs(playerVelocity) > 5 }">
+              {{ formatVelocity(playerVelocity) }}
+            </span>
+            <div class="speed-bar">
+              <div class="speed-fill" :style="{ width: speedPercentage + '%' }"></div>
+            </div>
+          </div>
+          
+          <!-- 弹药显示 -->
+          <div class="info-item ammo-display">
+            <span class="info-label">弹药</span>
+            <span class="info-value" :class="{ 'low-ammo': ammoPercentage < 30 }">
+              {{ ammo }} / 999
+            </span>
+            <div class="ammo-bar">
+              <div class="ammo-fill" :style="{ width: ammoPercentage + '%' }"></div>
+            </div>
+          </div>
+          
+          <!-- 得分和等级 -->
+          <div class="info-item score-display">
+            <span class="info-label">得分</span>
+            <span class="info-value score-value">
+              {{ formatScore(score) }}
+            </span>
+          </div>
+          
+          <div class="info-item level-display">
+            <span class="info-label">等级</span>
+            <span class="info-value level-value">
+              {{ level }}
+            </span>
+          </div>
         </div>
-        <div class="level">等级: <span>{{ level }}</span></div>
-        <div class="ammo">弹药: <span>{{ ammo }}</span></div>
+      </div>
+      
+      <!-- 左侧控制台 -->
+      <div class="cockpit-left">
+        <div class="control-panel">
+          <div class="panel-indicator"></div>
+          <div class="panel-indicator"></div>
+          <div class="panel-indicator"></div>
+        </div>
+      </div>
+      
+      <!-- 右侧控制台 -->
+      <div class="cockpit-right">
+        <div class="control-panel">
+          <div class="panel-indicator"></div>
+          <div class="panel-indicator"></div>
+          <div class="panel-indicator"></div>
+        </div>
+      </div>
+      
+      <!-- 底部控制台 -->
+      <div class="cockpit-bottom">
+        <div class="hud-line bottom-line"></div>
+        <div class="corner-decor corner-bottom-left"></div>
+        <div class="corner-decor corner-bottom-right"></div>
+        <div class="status-lights">
+          <div class="status-light active"></div>
+          <div class="status-light active"></div>
+          <div class="status-light"></div>
+        </div>
+      </div>
+      
+      <!-- 游戏容器 -->
+      <div class="game-container">
+        <div class="stars" ref="starsContainer"></div>
+        <!-- HUD网格效果 -->
+        <div class="hud-grid"></div>
+        <canvas ref="gameCanvas" width="800" height="600"></canvas>
+        
+        <!-- 受击警告 - 显示在游戏容器中央 -->
+        <transition name="alert-pulse">
+          <div v-if="hitWarning" class="warning-alert-center">
+            <i class="el-icon-warning"></i>
+            <span>警告：受到攻击！</span>
+          </div>
+        </transition>
+        
         <!-- 游戏中的返回按钮 -->
         <el-button 
           v-if="gameState === 'playing'" 
@@ -22,40 +116,40 @@
           size="small"
         ></el-button>
       </div>
+    </div>
 
-      <!-- 开始界面 -->
-      <div v-if="gameState === 'start'" class="start-screen">
-        <h1>🚀 星际防卫战 🚀</h1>
-        <p>保卫地球，击败外星入侵者！</p>
-        <el-button type="primary" size="large" @click="startGame" class="game-btn">
-          开始游戏
-        </el-button>
-        <el-button size="large" @click="goHome" class="game-btn-secondary">
-          返回首页
-        </el-button>
-        <div class="instructions">
-          <p>🎮 操作方式：</p>
-          <p>← → 方向键移动飞船</p>
-          <p>空格键发射激光（消耗弹药）</p>
-          <p>躲避敌人攻击，收集道具！</p>
-          <p>🎁 道具说明：</p>
-          <p>🟢 绿十字：恢复生命值</p>
-          <p>🔵 蓝菱形：补充弹药</p>
-          <p>🟡 黄星星：额外得分</p>
-        </div>
+    <!-- 开始界面 - 移到容器外 -->
+    <div v-if="gameState === 'start'" class="start-screen">
+      <h1>🚀 星际防卫战 🚀</h1>
+      <p>保卫地球，击败外星入侵者！</p>
+      <el-button type="primary" size="large" @click="startGame" class="game-btn">
+        开始游戏
+      </el-button>
+      <el-button size="large" @click="goHome" class="game-btn-secondary">
+        返回首页
+      </el-button>
+      <div class="instructions">
+        <p>🎮 操作方式：</p>
+        <p>← → 方向键加速移动飞船（松开后自动减速）</p>
+        <p>空格键发射激光（消耗弹药）</p>
+        <p>躲避敌人攻击，收集道具！</p>
+        <p>🎁 道具说明：</p>
+        <p>🟢 绿十字：恢复生命值</p>
+        <p>🔵 蓝菱形：补充弹药</p>
+        <p>🟡 黄星星：额外得分</p>
       </div>
+    </div>
 
-      <!-- 游戏结束界面 -->
-      <div v-if="gameState === 'gameOver'" class="game-over">
-        <h2>💥 游戏结束 💥</h2>
-        <p>最终得分: <span>{{ formatScore(score) }}</span></p>
-        <p>到达等级: <span>{{ level }}</span></p>
-        <p>游戏时长: <span>{{ formatPlayTime(playTime) }}</span></p>
-        <div class="game-over-actions">
-          <el-button type="primary" @click="handleSaveAndRestart">保存并重新开始</el-button>
-          <el-button @click="restartGame">重新开始</el-button>
-          <el-button @click="goHome">返回首页</el-button>
-        </div>
+    <!-- 游戏结束界面 - 移到容器外 -->
+    <div v-if="gameState === 'gameOver'" class="game-over">
+      <h2>💥 游戏结束 💥</h2>
+      <p>最终得分: <span>{{ formatScore(score) }}</span></p>
+      <p>到达等级: <span>{{ level }}</span></p>
+      <p>游戏时长: <span>{{ formatPlayTime(playTime) }}</span></p>
+      <div class="game-over-actions">
+        <el-button type="primary" @click="handleSaveAndRestart">保存并重新开始</el-button>
+        <el-button @click="restartGame">重新开始</el-button>
+        <el-button @click="goHome">返回首页</el-button>
       </div>
     </div>
   </div>
@@ -89,7 +183,10 @@ export default {
         y: 520,
         width: 50,
         height: 40,
-        speed: 5,
+        velocity: 0, // 当前速度（横向）
+        maxSpeed: 8, // 最大速度
+        acceleration: 0.5, // 加速度
+        deceleration: 1.2, // 减速度（比加速度大）
         color: '#00ffff'
       },
       bullets: [],
@@ -99,11 +196,39 @@ export default {
       particles: [],
       keys: {},
       animationFrameId: null,
-      starCheckInterval: null
+      starCheckInterval: null,
+      hitWarning: false, // 受击警告状态
+      lastHealth: 100 // 上次生命值，用于检测受击
     }
   },
   computed: {
-    ...mapGetters('user', ['isLoggedIn'])
+    ...mapGetters('user', ['isLoggedIn']),
+    // 飞船当前速度（格式化）
+    playerVelocity() {
+      return this.player.velocity || 0
+    },
+    // 速度百分比（用于显示速度条）
+    speedPercentage() {
+      const percentage = (Math.abs(this.playerVelocity) / this.player.maxSpeed) * 100
+      return Math.min(100, percentage)
+    },
+    // 弹药百分比
+    ammoPercentage() {
+      return (this.ammo / 999) * 100
+    },
+    // 是否低血量（小于30%）
+    isLowHealth() {
+      return this.health < 30
+    }
+  },
+  watch: {
+    // 监听生命值变化，检测受击
+    health(newHealth, oldHealth) {
+      if (newHealth < oldHealth && this.gameState === 'playing') {
+        this.triggerHitWarning()
+      }
+      this.lastHealth = newHealth
+    }
   },
   mounted() {
     this.initCanvas()
@@ -266,6 +391,7 @@ export default {
       this.timeScore = 0
       this.level = 1
       this.health = 100
+      this.lastHealth = 100
       this.ammo = 20
       this.bullets = []
       this.enemies = []
@@ -273,6 +399,8 @@ export default {
       this.powerups = []
       this.particles = []
       this.player.x = this.canvas.width / 2 - 25
+      this.player.velocity = 0 // 重置速度
+      this.hitWarning = false // 重置警告状态
       this.gameStartTime = Date.now()
       this.lastTime = this.gameStartTime
       this.deltascore = 0
@@ -281,6 +409,20 @@ export default {
       this.$nextTick(() => {
         this.createStars()
       })
+    },
+    // 格式化速度显示
+    formatVelocity(velocity) {
+      const absVelocity = Math.abs(velocity)
+      if (absVelocity < 0.1) return '0.0'
+      return absVelocity.toFixed(1)
+    },
+    // 触发受击警告
+    triggerHitWarning() {
+      this.hitWarning = true
+      // 1.5秒后关闭警告
+      setTimeout(() => {
+        this.hitWarning = false
+      }, 1500)
     },
     
     startGame() {
@@ -633,12 +775,46 @@ export default {
       
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       
-      // 玩家移动
-      if (this.keys['ArrowLeft'] && this.player.x > 0) {
-        this.player.x -= this.player.speed
+      // 玩家移动 - 使用加速度/减速度机制
+      // 基于帧率归一化（假设60fps）
+      const frameRate = 60
+      const normalizedDelta = deltaTime / (1000 / frameRate)
+      
+      // 根据按键状态改变速度
+      if (this.keys['ArrowLeft']) {
+        // 向左加速
+        this.player.velocity -= this.player.acceleration * normalizedDelta
+      } else if (this.keys['ArrowRight']) {
+        // 向右加速
+        this.player.velocity += this.player.acceleration * normalizedDelta
+      } else {
+        // 没有按键时减速（减速度比加速度大，减速更快）
+        if (this.player.velocity > 0) {
+          this.player.velocity -= this.player.deceleration * normalizedDelta
+          if (this.player.velocity < 0) this.player.velocity = 0
+        } else if (this.player.velocity < 0) {
+          this.player.velocity += this.player.deceleration * normalizedDelta
+          if (this.player.velocity > 0) this.player.velocity = 0
+        }
       }
-      if (this.keys['ArrowRight'] && this.player.x < this.canvas.width - this.player.width) {
-        this.player.x += this.player.speed
+      
+      // 限制最大速度
+      if (this.player.velocity > this.player.maxSpeed) {
+        this.player.velocity = this.player.maxSpeed
+      } else if (this.player.velocity < -this.player.maxSpeed) {
+        this.player.velocity = -this.player.maxSpeed
+      }
+      
+      // 更新位置（velocity是每帧移动的像素数）
+      this.player.x += this.player.velocity * normalizedDelta
+      
+      // 边界检测
+      if (this.player.x < 0) {
+        this.player.x = 0
+        this.player.velocity = 0
+      } else if (this.player.x > this.canvas.width - this.player.width) {
+        this.player.x = this.canvas.width - this.player.width
+        this.player.velocity = 0
       }
       
       // 发射子弹
@@ -720,18 +896,26 @@ export default {
       // 碰撞检测 - 敌人子弹击中玩家
       this.enemyBullets.forEach((bullet, bulletIndex) => {
         if (this.checkCollision(bullet, this.player)) {
+          const oldHealth = this.health
           this.health -= 10
           this.enemyBullets.splice(bulletIndex, 1)
           this.createExplosion(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2)
+          if (this.health < oldHealth) {
+            this.triggerHitWarning()
+          }
         }
       })
       
       // 碰撞检测 - 敌人撞击玩家
       this.enemies.forEach((enemy, enemyIndex) => {
         if (this.checkCollision(enemy, this.player)) {
+          const oldHealth = this.health
           this.health -= 20
           this.enemies.splice(enemyIndex, 1)
           this.createExplosion(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2)
+          if (this.health < oldHealth) {
+            this.triggerHitWarning()
+          }
         }
       })
       
@@ -791,23 +975,68 @@ export default {
 <style scoped>
 .game-page {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #0c0c2e 0%, #1a1a3e 50%, #2d1b69 100%);
+  /* 与主页面一致的背景 */
+  background: linear-gradient(135deg, #0c0c2e 0%, #1a1a3e 30%, #2d1b69 60%, #4a148c 100%);
+  background-size: 200% 200%;
+  animation: gradientMove 15s ease infinite;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
 }
 
-.game-container {
+/* 添加驾驶舱环境的背景光效 */
+.game-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(0, 191, 255, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(138, 43, 226, 0.15) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 驾驶舱框架容器 */
+.cockpit-frame {
   position: relative;
+  width: 900px;
+  height: 720px;
+  z-index: 10;
+}
+
+/* 游戏容器 - 驾驶舱视窗 */
+.game-container {
+  position: absolute;
+  top: 80px;
+  left: 50px;
   width: 800px;
   height: 600px;
-  background: linear-gradient(180deg, #000428 0%, #004e92 100%);
-  border: 3px solid #00ffff;
-  border-radius: 15px;
-  overflow: visible;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(0, 191, 255, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 
+    0 0 30px rgba(0, 191, 255, 0.3),
+    inset 0 0 50px rgba(0, 191, 255, 0.1);
+  /* 玻璃反射效果 */
+  background-image: 
+    linear-gradient(180deg, rgba(0, 191, 255, 0.05) 0%, transparent 20%),
+    linear-gradient(0deg, rgba(0, 191, 255, 0.05) 0%, transparent 20%);
+  z-index: 1;
 }
 
 canvas {
@@ -833,6 +1062,487 @@ canvas {
   overflow: hidden;
   /* 确保星星可见 */
   background: transparent;
+}
+
+/* HUD网格效果 */
+.hud-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  background-image: 
+    linear-gradient(rgba(0, 191, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 191, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.3;
+  animation: gridPulse 3s ease-in-out infinite;
+}
+
+@keyframes gridPulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+
+/* 驾驶舱顶部 */
+.cockpit-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: linear-gradient(180deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 20, 40, 0.7) 100%);
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  border: 2px solid rgba(0, 191, 255, 0.3);
+  border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 20px;
+}
+
+/* HUD扫描线 */
+.hud-line {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 191, 255, 0.6) 20%, 
+    rgba(0, 191, 255, 0.8) 50%, 
+    rgba(0, 191, 255, 0.6) 80%, 
+    transparent 100%);
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+}
+
+.top-line {
+  top: 0;
+  animation: scanLine 2s ease-in-out infinite;
+}
+
+.bottom-line {
+  bottom: 0;
+  animation: scanLine 2s ease-in-out infinite reverse;
+}
+
+@keyframes scanLine {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+.hud-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 191, 255, 1) 50%, 
+    transparent 100%);
+  box-shadow: 0 0 20px rgba(0, 191, 255, 0.8);
+  animation: scanMove 3s linear infinite;
+}
+
+@keyframes scanMove {
+  0% { top: 0; opacity: 1; }
+  100% { top: 100%; opacity: 0.5; }
+}
+
+/* 角落装饰 */
+.corner-decor {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(0, 191, 255, 0.6);
+  pointer-events: none;
+}
+
+.corner-top-left {
+  top: 5px;
+  left: 5px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 5px;
+}
+
+.corner-top-right {
+  top: 5px;
+  right: 5px;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 5px;
+}
+
+.corner-bottom-left {
+  bottom: 5px;
+  left: 5px;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 5px;
+}
+
+.corner-bottom-right {
+  bottom: 5px;
+  right: 5px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 5px;
+}
+
+/* 左侧控制台 */
+/* 仪表盘信息 */
+.dashboard-info {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* 低血量警告 - 整个仪表盘闪烁（无边框） */
+.dashboard-info.low-health-warning {
+  background: rgba(255, 0, 0, 0.15);
+  animation: dashboardWarning 1s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+}
+
+@keyframes dashboardWarning {
+  0%, 100% { 
+    background: rgba(255, 0, 0, 0.15);
+    box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+  }
+  50% { 
+    background: rgba(255, 0, 0, 0.25);
+    box-shadow: 0 0 50px rgba(255, 0, 0, 0.7);
+  }
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 100px;
+  flex: 0 0 auto;
+}
+
+.info-label {
+  font-size: 11px;
+  color: rgba(0, 191, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.info-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #00ffff;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 10px rgba(0, 191, 255, 0.8);
+  transition: color 0.3s ease;
+}
+
+.info-value.high-speed {
+  color: #ff6b6b;
+  text-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+}
+
+.info-value.low-ammo {
+  color: #ffaa44;
+  text-shadow: 0 0 10px rgba(255, 170, 68, 0.8);
+}
+
+.info-value.low-health {
+  color: #ff4444;
+  text-shadow: 0 0 10px rgba(255, 68, 68, 0.8);
+  animation: healthWarning 0.5s ease-in-out infinite;
+}
+
+@keyframes healthWarning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.info-value.score-value {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+.info-value.level-value {
+  color: #a8b5ff;
+  text-shadow: 0 0 10px rgba(168, 181, 255, 0.8);
+}
+
+/* 速度条 */
+.speed-bar,
+.ammo-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 191, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.speed-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ffff 0%, #0066ff 100%);
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px rgba(0, 191, 255, 0.6);
+}
+
+.ammo-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px rgba(79, 172, 254, 0.6);
+}
+
+.info-value.high-speed ~ .speed-bar .speed-fill {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ff3333 100%);
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+}
+
+.info-value.low-ammo ~ .ammo-bar .ammo-fill {
+  background: linear-gradient(90deg, #ffaa44 0%, #ff6600 100%);
+  box-shadow: 0 0 8px rgba(255, 170, 68, 0.6);
+}
+
+/* 仪表盘生命条 */
+.health-bar-dashboard {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.health-fill-dashboard {
+  height: 100%;
+  background: linear-gradient(90deg, #ff4444 0%, #ffaa44 50%, #44ff44 100%);
+  transition: width 0.3s ease;
+  border-radius: 3px;
+  box-shadow: 0 0 12px rgba(68, 255, 68, 0.6);
+}
+
+.info-value.low-health ~ .health-bar-dashboard .health-fill-dashboard {
+  background: linear-gradient(90deg, #ff0000 0%, #ff4444 100%);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+  animation: healthBarPulse 1s ease-in-out infinite;
+}
+
+@keyframes healthBarPulse {
+  0%, 100% { 
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+  }
+  50% { 
+    box-shadow: 0 0 25px rgba(255, 0, 0, 1);
+  }
+}
+
+/* 警告提示 - 游戏容器中央 */
+.warning-alert-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background: rgba(255, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border: 3px solid rgba(255, 0, 0, 0.9);
+  border-radius: 12px;
+  color: #ff4444;
+  font-size: 24px;
+  font-weight: 700;
+  text-shadow: 0 0 15px rgba(255, 68, 68, 1);
+  box-shadow: 
+    0 0 30px rgba(255, 0, 0, 0.8),
+    inset 0 0 20px rgba(255, 0, 0, 0.3);
+  animation: warningPulseCenter 0.4s ease-in-out infinite;
+  z-index: 100;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.warning-alert-center i {
+  font-size: 32px;
+  animation: warningIconSpin 0.5s ease-in-out infinite;
+}
+
+@keyframes warningPulseCenter {
+  0%, 100% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 
+      0 0 30px rgba(255, 0, 0, 0.8),
+      inset 0 0 20px rgba(255, 0, 0, 0.3);
+  }
+  50% { 
+    opacity: 0.9; 
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow: 
+      0 0 50px rgba(255, 0, 0, 1),
+      inset 0 0 30px rgba(255, 0, 0, 0.5);
+  }
+}
+
+@keyframes warningIconSpin {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
+.alert-pulse-enter-active {
+  animation: alertFadeIn 0.2s ease;
+}
+
+.alert-pulse-leave-active {
+  animation: alertFadeOut 0.2s ease;
+}
+
+@keyframes alertFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 15px)) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes alertFadeOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 15px)) scale(0.8);
+  }
+}
+
+.cockpit-left {
+  position: absolute;
+  left: 0;
+  top: 80px;
+  bottom: 40px;
+  width: 50px;
+  background: linear-gradient(90deg, rgba(0, 20, 40, 0.9) 0%, rgba(0, 20, 40, 0.6) 100%);
+  border-left: 2px solid rgba(0, 191, 255, 0.3);
+  border-right: 1px solid rgba(0, 191, 255, 0.2);
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 右侧控制台 */
+.cockpit-right {
+  position: absolute;
+  right: 0;
+  top: 80px;
+  bottom: 40px;
+  width: 50px;
+  background: linear-gradient(270deg, rgba(0, 20, 40, 0.9) 0%, rgba(0, 20, 40, 0.6) 100%);
+  border-right: 2px solid rgba(0, 191, 255, 0.3);
+  border-left: 1px solid rgba(0, 191, 255, 0.2);
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 控制面板 */
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.panel-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 191, 255, 0.6);
+  box-shadow: 0 0 8px rgba(0, 191, 255, 0.8);
+  animation: indicatorBlink 2s ease-in-out infinite;
+}
+
+.panel-indicator:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.panel-indicator:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes indicatorBlink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* 底部控制台 */
+.cockpit-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(0deg, rgba(0, 20, 40, 0.9) 0%, rgba(0, 20, 40, 0.6) 100%);
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+  border: 2px solid rgba(0, 191, 255, 0.3);
+  border-top: 1px solid rgba(0, 191, 255, 0.2);
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+/* 状态指示灯 */
+.status-lights {
+  display: flex;
+  gap: 10px;
+}
+
+.status-light {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.status-light.active {
+  background: rgba(0, 255, 100, 0.8);
+  box-shadow: 0 0 10px rgba(0, 255, 100, 0.6);
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
 .star {
@@ -871,97 +1581,28 @@ canvas {
   }
 }
 
-.game-ui {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.game-ui .score,
-.game-ui .health,
-.game-ui .level,
-.game-ui .ammo {
-  position: absolute;
-  color: #00ffff;
-  font-size: 18px;
-  font-weight: bold;
-  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-  padding: 5px 10px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 5px;
-}
-
-.game-ui .score {
-  top: 20px;
-  left: 20px;
-}
-
-.game-ui .score span {
-  color: #ffff00;
-}
-
-.game-ui .health {
-  top: 20px;
-  right: 20px;
-}
-
-.game-ui .level {
-  top: 60px;
-  left: 20px;
-}
-
-.game-ui .level span {
-  color: #ff00ff;
-}
-
-.game-ui .ammo {
-  top: 80px;
-  right: 20px;
-}
-
-.game-ui .ammo span {
-  color: #00ff00;
-}
 
 .back-btn {
   position: absolute !important;
   top: 10px !important;
   right: 10px !important;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.6) !important;
-  border: 2px solid #00ffff !important;
-  color: #00ffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
   pointer-events: auto !important;
+  transition: all 0.3s ease !important;
 }
 
 .back-btn:hover {
-  background: rgba(0, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
   transform: scale(1.1);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
 }
 
-.health-bar {
-  position: absolute;
-  top: 50px;
-  right: 20px;
-  width: 150px;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid rgba(0, 255, 255, 0.5);
-}
 
-.health-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #ff0000 0%, #ffff00 50%, #00ff00 100%);
-  transition: width 0.3s ease;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-}
 
 .start-screen,
 .game-over {
@@ -969,67 +1610,77 @@ canvas {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  text-align: center;
-  color: #00ffff;
-  background: rgba(0, 0, 0, 0.9);
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
   padding: 40px;
-  border-radius: 15px;
-  border: 2px solid #00ffff;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-  z-index: 20;
+  text-align: center;
+  color: white;
   min-width: 400px;
-  backdrop-filter: blur(10px);
+  max-width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
 }
 
 .start-screen h1 {
   font-size: 36px;
   margin-bottom: 20px;
-  text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff 0%, #a8b5ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.05); filter: brightness(1.2); }
 }
 
 .start-screen p {
   font-size: 18px;
   margin-bottom: 30px;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .start-screen .game-btn {
-  margin: 20px 0;
+  margin: 20px 10px;
   padding: 12px 40px;
   font-size: 18px;
-  background: linear-gradient(135deg, #00ffff 0%, #0080ff 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .start-screen .game-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
 }
 
 .start-screen .game-btn-secondary {
-  margin: 10px 0;
+  margin: 10px 10px;
   padding: 12px 40px;
   font-size: 18px;
   background: rgba(255, 255, 255, 0.1);
-  border: 2px solid #00ffff;
-  color: #00ffff;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .start-screen .game-btn-secondary:hover {
-  background: rgba(0, 255, 255, 0.2);
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
 }
 
 .instructions {
@@ -1037,10 +1688,12 @@ canvas {
   text-align: left;
   font-size: 14px;
   line-height: 1.8;
-  color: #cccccc;
-  background: rgba(0, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .instructions p {
@@ -1051,20 +1704,22 @@ canvas {
 .game-over h2 {
   font-size: 32px;
   margin-bottom: 20px;
-  color: #ff4444;
-  text-shadow: 0 0 20px rgba(255, 68, 68, 0.8);
+  font-weight: 700;
+  color: #ff6b6b;
+  text-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
 }
 
 .game-over p {
   font-size: 18px;
   margin: 15px 0;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .game-over p span {
-  color: #ffff00;
-  font-weight: bold;
+  color: #ffd700;
+  font-weight: 700;
   font-size: 20px;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
 }
 
 .game-over-actions {
@@ -1078,15 +1733,67 @@ canvas {
 .game-over-actions .el-button {
   padding: 10px 20px;
   font-size: 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.game-over-actions .el-button--primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.game-over-actions .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
 /* 响应式设计 */
 @media (max-width: 900px) {
+  .cockpit-frame {
+    width: 100%;
+    max-width: 900px;
+    height: auto;
+  }
+
   .game-container {
     width: 100%;
     max-width: 800px;
     height: auto;
     aspect-ratio: 800 / 600;
+  }
+
+  .cockpit-left,
+  .cockpit-right {
+    width: 30px;
+  }
+
+  .cockpit-top {
+    height: 60px;
+    flex-direction: column;
+    padding: 5px;
+  }
+
+  .dashboard-info {
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .info-item {
+    min-width: 100px;
+  }
+
+  .info-value {
+    font-size: 14px;
+  }
+
+  .warning-alert {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .cockpit-bottom {
+    height: 30px;
   }
 
   canvas {
@@ -1109,17 +1816,5 @@ canvas {
     font-size: 24px;
   }
 
-  .game-ui .score,
-  .game-ui .health,
-  .game-ui .level,
-  .game-ui .ammo {
-    font-size: 14px;
-    padding: 3px 8px;
-  }
-
-  .health-bar {
-    width: 120px;
-    height: 10px;
-  }
 }
 </style>
