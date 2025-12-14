@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.starwar.mapper.UserMapper">
+    
+    <select id="selectByUsername" resultType="com.starwar.entity.User">
+        SELECT * FROM user WHERE username = #{username}
+    </select>
+    
+    <select id="selectByEmail" resultType="com.starwar.entity.User">
+        SELECT * FROM user WHERE email = #{email}
+    </select>
+    
+    <select id="selectById" resultType="com.starwar.entity.User">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user(username, password, email, nickname)
+        VALUES(#{username}, #{password}, #{email}, #{nickname})
+    </insert>
+    
+    <update id="update">
+        UPDATE user
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>
+
+

@@ -1,0 +1,77 @@
+===============================
+终端启动后端项目 - 快速开始
+===============================
+
+前提条件
+--------
+✅ JDK 8 已安装并配置环境变量
+✅ Maven 已安装并配置环境变量  
+✅ MySQL 已启动，数据库已初始化
+
+快速启动（2种方式）
+-------------------
+
+方式1：使用启动脚本（最简单）⭐
+----------------------------
+1. 双击 backend/start.bat 文件
+2. 等待启动完成
+3. 看到 "Started StarWarApplication" 即可
+
+方式2：使用命令行
+-----------------
+1. 打开 PowerShell 或 CMD
+2. 进入项目目录：
+   cd G:\myproject\starwar\backend
+
+3. 首次运行（下载依赖）：
+   mvn clean install
+
+4. 启动项目：
+   mvn spring-boot:run
+
+验证启动
+--------
+1. 浏览器访问：http://localhost:8080/swagger-ui.html
+2. 如果看到Swagger文档页面，说明启动成功
+
+快速测试接口
+------------
+在浏览器中访问：
+http://localhost:8080/api/v1/game/leaderboard?page=1&size=20
+
+如果返回JSON数据，说明接口正常
+
+常用命令
+--------
+# 启动项目
+mvn spring-boot:run
+
+# 编译项目
+mvn compile
+
+# 打包项目
+mvn clean package
+
+# 运行jar包
+java -jar target\star-war-backend-1.0.0.jar
+
+常见问题
+--------
+Q: mvn命令不识别？
+A: 检查Maven是否安装，环境变量是否配置
+
+Q: 启动失败，端口被占用？
+A: 修改 application.yml 中的端口号
+
+Q: 数据库连接失败？
+A: 检查MySQL是否启动，密码是否正确
+
+Q: 依赖下载失败？
+A: 配置Maven国内镜像源（见详细文档）
+
+详细说明
+--------
+完整教程请查看：backend/终端启动指南.md
+
+祝您使用愉快！🚀
+

@@ -1,0 +1,94 @@
+===================================
+Maven安装问题排查指南
+===================================
+
+问题：运行start.bat时显示"Maven未安装"
+
+原因分析
+---------
+1. Maven未安装
+2. Maven已安装但环境变量未配置
+3. 配置了环境变量但未重启命令行
+
+快速解决（3个选项）
+------------------
+
+选项1：安装Maven（推荐长期使用）⭐⭐⭐
+--------------------------------------
+1. 下载：https://maven.apache.org/download.cgi
+   选择：apache-maven-3.9.5-bin.zip
+
+2. 解压到：C:\apache-maven-3.9.5
+
+3. 配置环境变量：
+   - 右键"此电脑" -> "属性" -> "高级系统设置" -> "环境变量"
+   - 新建系统变量：
+     变量名：MAVEN_HOME
+     变量值：C:\apache-maven-3.9.5
+   - 编辑Path变量：
+     添加：%MAVEN_HOME%\bin
+
+4. 重启命令行窗口
+
+5. 验证：mvn -version
+
+详细步骤：查看"安装Maven指南.md"
+
+选项2：使用IDEA运行（无需安装Maven）⭐⭐⭐
+---------------------------------------
+如果您有IntelliJ IDEA：
+
+1. 打开IntelliJ IDEA
+2. File -> Open -> 选择backend目录
+3. 等待依赖下载完成
+4. 找到StarWarApplication.java
+5. 右键 -> Run 'StarWarApplication'
+
+IDEA会自动使用其内置的Maven
+
+选项3：使用IDEA的Maven（临时方案）⭐⭐
+--------------------------------------
+如果您有IntelliJ IDEA：
+
+1. 找到IDEA自带的Maven位置：
+   通常在：C:\Users\你的用户名\.m2\wrapper\dists\
+   或者：C:\Program Files\JetBrains\IntelliJ IDEA xxx\plugins\maven\lib\maven3\
+
+2. 将该Maven的bin目录添加到Path环境变量
+
+3. 验证：mvn -version
+
+推荐方案
+--------
+✅ 如果您想长期开发：安装独立的Maven（选项1）
+✅ 如果您只是想快速运行：使用IDEA（选项2）
+✅ 如果您不想配置环境变量：使用start.bat + IDEA（选项2）
+
+注意事项
+--------
+⚠️  环境变量配置后必须重启命令行窗口才能生效！
+⚠️  配置系统环境变量需要管理员权限
+⚠️  路径中不要包含中文或空格
+
+常见错误
+--------
+
+错误1：mvn: command not found
+解决：环境变量未配置或未重启命令行
+
+错误2：JAVA_HOME is not set correctly
+解决：先配置Java环境变量
+
+错误3：找不到maven包
+解决：检查MAVEN_HOME路径是否正确
+
+详细说明
+--------
+- 安装Maven指南.md - 详细安装步骤
+- 终端启动指南.md - 完整启动教程
+- 开始使用指南.md - 项目使用指南
+
+===================================
+推荐：如果您是初学者，直接使用IDEA打开项目运行最简单！
+===================================
+

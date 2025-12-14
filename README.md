@@ -34,20 +34,43 @@
 - CSS3 动画效果
 - 响应式设计
 
-### 后端（开发中）
-- Spring Boot 2.x
+### 后端 ✅
+- Spring Boot 2.7.18
 - MySQL 8.0
 - MyBatis
 - JWT 认证
+- Swagger文档
 
-## 📚 项目文档
+## 🚀 快速开始
 
+### 后端启动（3种方式）
+
+1. **最简单** - 双击 `backend/start.bat` ⭐
+2. **命令行** - 见 [终端启动指南](backend/终端启动指南.md)
+3. **IDEA** - 打开项目后运行 StarWarApplication
+
+> 💡 如遇到Maven问题，查看 [Maven问题排查](backend/Maven问题排查.txt)
+
+### 详细文档
 完整的中文开发文档请参考：[docs/README.md](docs/README.md)
 
-包括：
-- 📖 [快速开始指南](docs/快速开始指南.md)
+**前端文档**：
+- 📖 [前端项目结构说明](frontend/项目结构说明.md)
+
+**后端文档**：
 - 📖 [后端开发说明文档](docs/后端开发说明文档.md)
+- 📖 [开始使用指南](docs/开始使用指南.md)
+- 📖 [终端启动指南](backend/终端启动指南.md)
 - 🗄️ [数据库脚本](docs/database/init.sql)
+- 📁 [后端快速开始](backend/快速开始.txt)
+
+## 🎯 项目状态
+
+- 前端开发 ✅ 100%完成
+- 后端开发 ✅ 100%完成
+- 数据库设计 ✅ 完成
+- 文档编写 ✅ 完成
+- 测试部署 ⏳ 待进行
 
 ## 📱 设备支持
 

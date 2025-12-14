@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.starwar.mapper.PostMapper">
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO post(user_id, title, content)
+        VALUES(#{userId}, #{title}, #{content})
+    </insert>
+    
+    <select id="selectList" resultType="com.starwar.entity.Post">
+        SELECT p.*, u.username
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.status = 1
+        ORDER BY p.created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <select id="selectById" resultType="com.starwar.entity.Post">
+        SELECT p.*, u.username, u.nickname
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.id
+        WHERE p.id = #{id} AND p.status = 1
+    </select>
+    
+    <update id="updateViewCount">
+        UPDATE post SET view_count = view_count + 1 WHERE id = #{id}
+    </update>
+    
+    <update id="updateReplyCount">
+        UPDATE post SET reply_count = reply_count + 1 WHERE id = #{id}
+    </update>
+    
+    <select id="count" resultType="int">
+        SELECT COUNT(*) FROM post WHERE status = 1
+    </select>
+</mapper>
+
