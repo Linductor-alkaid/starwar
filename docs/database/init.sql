@@ -2,7 +2,7 @@
 -- 星际防卫战 - 数据库初始化脚本
 -- 数据库名称：star_war_db
 -- 字符集：utf8mb4
--- 创建时间：2024年
+-- 创建时间：2025年
 -- ========================================
 
 -- 创建数据库
@@ -13,10 +13,20 @@ DEFAULT COLLATE utf8mb4_unicode_ci;
 USE `star_war_db`;
 
 -- ========================================
--- 1. 用户表（user）
+-- 删除表（按照依赖关系的逆序删除，先删除有外键约束的表）
 -- ========================================
+-- 先删除回复表（依赖 post 和 user）
+DROP TABLE IF EXISTS `reply`;
+-- 再删除帖子表（依赖 user）
+DROP TABLE IF EXISTS `post`;
+-- 再删除游戏记录表（依赖 user）
+DROP TABLE IF EXISTS `game_record`;
+-- 最后删除用户表（被其他表引用）
 DROP TABLE IF EXISTS `user`;
 
+-- ========================================
+-- 1. 用户表（user）
+-- ========================================
 CREATE TABLE `user` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `username` VARCHAR(50) NOT NULL COMMENT '用户名',
@@ -35,8 +45,6 @@ CREATE TABLE `user` (
 -- ========================================
 -- 2. 游戏记录表（game_record）
 -- ========================================
-DROP TABLE IF EXISTS `game_record`;
-
 CREATE TABLE `game_record` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '记录ID',
   `user_id` BIGINT NOT NULL COMMENT '用户ID',
@@ -54,8 +62,6 @@ CREATE TABLE `game_record` (
 -- ========================================
 -- 3. 帖子表（post）
 -- ========================================
-DROP TABLE IF EXISTS `post`;
-
 CREATE TABLE `post` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '帖子ID',
   `user_id` BIGINT NOT NULL COMMENT '发布者ID',
@@ -77,8 +83,6 @@ CREATE TABLE `post` (
 -- ========================================
 -- 4. 回复表（reply）
 -- ========================================
-DROP TABLE IF EXISTS `reply`;
-
 CREATE TABLE `reply` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '回复ID',
   `post_id` BIGINT NOT NULL COMMENT '帖子ID',
