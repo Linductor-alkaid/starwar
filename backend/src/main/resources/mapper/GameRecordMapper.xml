@@ -30,6 +30,59 @@
     <select id="countAll" resultType="int">
         SELECT COUNT(*) FROM game_record
     </select>
+    
+    <!-- 查询每个用户的最高成绩，按分数降序排列，取前N名 -->
+    <!-- 如果同一用户有多条相同最高分的记录，选择最早的那条 -->
+    <select id="selectTopScores" resultType="com.starwar.entity.GameRecord">
+        SELECT gr.*, u.username
+        FROM (
+            SELECT gr1.*
+            FROM game_record gr1
+            INNER JOIN (
+                SELECT user_id, MAX(score) as max_score
+                FROM game_record
+                GROUP BY user_id
+            ) max_scores ON gr1.user_id = max_scores.user_id AND gr1.score = max_scores.max_score
+            WHERE gr1.id = (
+                SELECT MIN(gr2.id)
+                FROM game_record gr2
+                WHERE gr2.user_id = gr1.user_id AND gr2.score = max_scores.max_score
+            )
+        ) gr
+        LEFT JOIN user u ON gr.user_id = u.id
+        ORDER BY gr.score DESC, gr.record_date ASC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 查询指定用户的最高成绩 -->
+    <select id="selectUserMaxScore" resultType="com.starwar.entity.GameRecord">
+        SELECT gr.*, u.username
+        FROM game_record gr
+        LEFT JOIN user u ON gr.user_id = u.id
+        WHERE gr.user_id = #{userId}
+        ORDER BY gr.score DESC, gr.record_date ASC
+        LIMIT 1
+    </select>
+    
+    <!-- 查询指定用户在所有用户最高成绩中的排名 -->
+    <select id="getUserRank" resultType="int">
+        SELECT COUNT(*) + 1 as rank
+        FROM (
+            SELECT user_id, MAX(score) as max_score
+            FROM game_record
+            GROUP BY user_id
+        ) max_scores
+        WHERE max_score > (
+            SELECT MAX(score)
+            FROM game_record
+            WHERE user_id = #{userId}
+        )
+    </select>
+    
+    <!-- 统计有游戏记录的用户总数 -->
+    <select id="countDistinctUsers" resultType="int">
+        SELECT COUNT(DISTINCT user_id) FROM game_record
+    </select>
 </mapper>
 
 

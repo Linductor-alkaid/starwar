@@ -33,9 +33,19 @@ public class GameController {
     }
     
     @GetMapping("/leaderboard")
-    public Result<PageResult<GameRecordVO>> getLeaderboard(@RequestParam(defaultValue = "1") Integer page,
-                                                @RequestParam(defaultValue = "20") Integer size) {
-        return Result.success(gameService.getLeaderboard(page, size));
+    public Result<?> getLeaderboard(@RequestHeader(value = "Authorization", required = false) String token) {
+        // 如果提供了token，返回包含当前用户信息的排行榜
+        if (token != null && token.startsWith("Bearer ")) {
+            try {
+                Long userId = getUserIdFromToken(token);
+                return Result.success(gameService.getLeaderboardWithUser(userId));
+            } catch (Exception e) {
+                // token无效时，返回不包含用户信息的排行榜（前10名）
+                return Result.success(gameService.getLeaderboardWithUser(null));
+            }
+        }
+        // 未登录用户，返回不包含用户信息的排行榜（前10名）
+        return Result.success(gameService.getLeaderboardWithUser(null));
     }
     
     private Long getUserIdFromToken(String token) {

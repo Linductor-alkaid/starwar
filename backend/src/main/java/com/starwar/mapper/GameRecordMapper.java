@@ -19,6 +19,18 @@ public interface GameRecordMapper {
                                        @Param("limit") Integer limit);
     
     int countAll();
+    
+    // 查询每个用户的最高成绩（用于排行榜）
+    List<GameRecord> selectTopScores(@Param("limit") Integer limit);
+    
+    // 查询指定用户的最高成绩
+    GameRecord selectUserMaxScore(@Param("userId") Long userId);
+    
+    // 查询指定用户在所有用户最高成绩中的排名
+    int getUserRank(@Param("userId") Long userId);
+    
+    // 统计有游戏记录的用户总数
+    int countDistinctUsers();
 }
 
 

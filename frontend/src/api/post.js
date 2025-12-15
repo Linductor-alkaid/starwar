@@ -43,3 +43,13 @@ export function replyPost(data) {
   })
 }
 
+/**
+ * 获取帖子回复列表
+ */
+export function getReplies(postId) {
+  return request({
+    url: `/post/replies/${postId}`,
+    method: 'get'
+  })
+}
+

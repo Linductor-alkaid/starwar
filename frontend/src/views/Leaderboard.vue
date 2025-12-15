@@ -20,7 +20,7 @@
       </div>
       <div class="nav-right">
         <div class="stats-info">
-          <span>共 {{ total }} 名玩家</span>
+          <span>共 {{ totalUsers || 0 }} 名玩家</span>
         </div>
       </div>
     </div>
@@ -36,12 +36,13 @@
 
         <!-- 排行榜列表 -->
         <div v-else class="leaderboard-list">
+          <!-- 前10名列表 -->
           <transition-group name="fade-in-up" tag="div">
             <div
-              v-for="(item, index) in leaderboardList"
-              :key="item.rank || index + 1"
+              v-for="(item, index) in topList"
+              :key="'top-' + item.id"
               class="rank-card"
-              :class="getRankClass(index)"
+              :class="[getRankClass(index), { 'current-user-in-top': isCurrentUser(item.userId) }]"
               @mouseenter="handleCardHover($event)"
               @mouseleave="handleCardLeave($event)"
             >
@@ -50,7 +51,7 @@
                 <span v-if="index < 3" class="medal-icon">
                   {{ ['🥇', '🥈', '🥉'][index] }}
                 </span>
-                <span v-else class="rank-number">#{{ (currentPage - 1) * pageSize + index + 1 }}</span>
+                <span v-else class="rank-number">#{{ index + 1 }}</span>
               </div>
 
               <!-- 玩家信息 -->
@@ -59,7 +60,10 @@
                   <i class="el-icon-user-solid"></i>
                 </div>
                 <div class="player-details">
-                  <h3 class="player-name">{{ item.username }}</h3>
+                  <h3 class="player-name">
+                    {{ item.username }}
+                    <span v-if="isCurrentUser(item.userId)" class="me-badge">我</span>
+                  </h3>
                   <div class="player-meta">
                     <span class="meta-item">
                       <i class="el-icon-star-on"></i>
@@ -85,23 +89,61 @@
             </div>
           </transition-group>
 
+          <!-- 分隔线（如果当前用户不在前10名内） -->
+          <div v-if="currentUser && !isCurrentUserInTop10" class="divider-section">
+            <div class="divider-line"></div>
+            <div class="divider-text">我的排名</div>
+            <div class="divider-line"></div>
+          </div>
+
+          <!-- 当前用户记录（如果不在前10名内） -->
+          <div
+            v-if="currentUser && !isCurrentUserInTop10"
+            class="rank-card current-user-card"
+            @mouseenter="handleCardHover($event)"
+            @mouseleave="handleCardLeave($event)"
+          >
+            <!-- 排名标识 -->
+            <div class="rank-badge badge-current-user">
+              <span class="rank-number">#{{ currentUserRank }}</span>
+            </div>
+
+            <!-- 玩家信息 -->
+            <div class="player-info">
+              <div class="player-avatar">
+                <i class="el-icon-user-solid"></i>
+              </div>
+              <div class="player-details">
+                <h3 class="player-name">{{ currentUser.username }} <span class="me-badge">我</span></h3>
+                <div class="player-meta">
+                  <span class="meta-item">
+                    <i class="el-icon-star-on"></i>
+                    等级 {{ currentUser.level || 1 }}
+                  </span>
+                  <span class="meta-divider">•</span>
+                  <span class="meta-item">
+                    <i class="el-icon-time"></i>
+                    {{ formatTime(currentUser.recordDate) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 得分信息 -->
+            <div class="score-info">
+              <div class="score-label">得分</div>
+              <div class="score-value">{{ formatScore(currentUser.score) }}</div>
+            </div>
+
+            <!-- 卡片光晕 -->
+            <div class="card-glow"></div>
+          </div>
+
           <!-- 空状态 -->
-          <div v-if="!loading && leaderboardList.length === 0" class="empty-state">
+          <div v-if="!loading && topList.length === 0" class="empty-state">
             <i class="el-icon-trophy empty-icon"></i>
             <p>暂无排行数据</p>
           </div>
-        </div>
-
-        <!-- 分页 -->
-        <div class="pagination-wrapper" v-if="total > pageSize">
-          <el-pagination
-            @current-change="handlePageChange"
-            :current-page="currentPage"
-            :page-size="pageSize"
-            :total="total"
-            layout="total, prev, pager, next"
-            background
-          />
         </div>
       </div>
     </div>
@@ -116,35 +158,42 @@ export default {
   name: 'Leaderboard',
   data() {
     return {
-      leaderboardList: [],
-      loading: false,
-      currentPage: 1,
-      pageSize: 20,
-      total: 0
+      topList: [],
+      currentUser: null,
+      currentUserRank: null,
+      totalUsers: 0,
+      loading: false
+    }
+  },
+  computed: {
+    // 判断当前用户是否在前10名内
+    isCurrentUserInTop10() {
+      if (!this.currentUser) return false
+      return this.topList.some(item => item.userId === this.currentUser.userId)
     }
   },
   methods: {
     formatScore,
+    // 判断是否是当前用户
+    isCurrentUser(userId) {
+      return this.currentUser && this.currentUser.userId === userId
+    },
     async loadLeaderboard() {
       this.loading = true
       try {
-        const res = await getLeaderboard({
-          page: this.currentPage,
-          size: this.pageSize
-        })
+        const res = await getLeaderboard()
         if (res.code === 200) {
-          this.leaderboardList = res.data.list
-          this.total = res.data.total
+          const data = res.data
+          this.topList = data.topList || []
+          this.currentUser = data.currentUser || null
+          this.currentUserRank = data.currentUserRank || null
+          this.totalUsers = data.totalUsers || 0
         }
       } catch (error) {
         this.$message.error('加载排行榜失败')
       } finally {
         this.loading = false
       }
-    },
-    handlePageChange(page) {
-      this.currentPage = page
-      this.loadLeaderboard()
     },
     // 获取排名样式类
     getRankClass(index) {
@@ -592,6 +641,77 @@ export default {
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
+}
+
+/* 分隔线区域 */
+.divider-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 30px 0;
+  padding: 0 24px;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    transparent 100%);
+}
+
+.divider-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* 当前用户在前10名内的特殊样式 */
+.current-user-in-top {
+  background: rgba(102, 126, 234, 0.2) !important;
+  border-color: rgba(102, 126, 234, 0.5) !important;
+  box-shadow: 0 0 30px rgba(102, 126, 234, 0.4) !important;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 当前用户卡片特殊样式（不在前10名内） */
+.current-user-card {
+  background: rgba(102, 126, 234, 0.2) !important;
+  border-color: rgba(102, 126, 234, 0.5) !important;
+  box-shadow: 0 0 30px rgba(102, 126, 234, 0.4) !important;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(102, 126, 234, 0.6);
+  }
+}
+
+.badge-current-user {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+}
+
+.badge-current-user .rank-number {
+  color: white;
+  font-weight: 700;
+}
+
+.me-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-left: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
 }
 
 /* 空状态 */

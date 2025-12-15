@@ -23,13 +23,12 @@ export function getHistory(params) {
 }
 
 /**
- * 获取排行榜
+ * 获取排行榜（前10名 + 当前用户排名）
  */
-export function getLeaderboard(params) {
+export function getLeaderboard() {
   return request({
     url: '/game/leaderboard',
-    method: 'get',
-    params
+    method: 'get'
   })
 }
 

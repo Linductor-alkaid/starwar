@@ -56,7 +56,7 @@
                 <div class="post-meta">
                   <span class="meta-item">
                     <i class="el-icon-user"></i>
-                    {{ post.author }}
+                    {{ post.nickname || post.username || '匿名用户' }}
                   </span>
                   <span class="meta-divider">•</span>
                   <span class="meta-item">
@@ -109,34 +109,64 @@
 
     <!-- 发布帖子对话框 -->
     <el-dialog 
-      title="发布帖子" 
+      title="" 
       :visible.sync="showCreateDialog" 
-      width="600px"
+      width="700px"
       class="create-dialog"
+      :close-on-click-modal="false"
     >
-      <el-form :model="postForm" label-width="80px">
-        <el-form-item label="标题">
+      <div class="dialog-header">
+        <i class="el-icon-edit-outline header-icon"></i>
+        <h2 class="dialog-title">发布新帖子</h2>
+        <p class="dialog-subtitle">分享你的想法，与大家一起讨论</p>
+      </div>
+      <el-form :model="postForm" label-width="0" class="post-form">
+        <el-form-item>
+          <div class="form-label">
+            <i class="el-icon-document label-icon"></i>
+            <span>标题</span>
+          </div>
           <el-input 
             v-model="postForm.title" 
-            placeholder="请输入帖子标题"
+            placeholder="请输入帖子标题，吸引更多关注..."
             maxlength="50"
             show-word-limit
+            class="form-input"
           ></el-input>
         </el-form-item>
-        <el-form-item label="内容">
+        <el-form-item>
+          <div class="form-label">
+            <i class="el-icon-edit label-icon"></i>
+            <span>内容</span>
+          </div>
           <el-input
             type="textarea"
             v-model="postForm.content"
-            :rows="6"
-            placeholder="请输入帖子内容"
+            :rows="8"
+            placeholder="分享你的想法、问题或经验...支持换行和多行输入"
             maxlength="1000"
             show-word-limit
+            class="form-textarea"
           ></el-input>
         </el-form-item>
       </el-form>
-      <div slot="footer">
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreatePost">发布</el-button>
+      <div slot="footer" class="dialog-footer">
+        <el-button 
+          class="cancel-btn" 
+          @click="showCreateDialog = false"
+        >
+          <i class="el-icon-close"></i>
+          取消
+        </el-button>
+        <el-button 
+          type="primary" 
+          class="submit-btn"
+          @click="handleCreatePost"
+          :loading="submitting"
+        >
+          <i class="el-icon-check"></i>
+          发布帖子
+        </el-button>
       </div>
     </el-dialog>
   </div>
@@ -156,6 +186,7 @@ export default {
       pageSize: 10,
       total: 0,
       showCreateDialog: false,
+      submitting: false,
       postForm: {
         title: '',
         content: ''
@@ -195,16 +226,30 @@ export default {
         this.$message.warning('请填写完整信息')
         return
       }
+      if (this.postForm.title.trim().length < 3) {
+        this.$message.warning('标题至少需要3个字符')
+        return
+      }
+      if (this.postForm.content.trim().length < 10) {
+        this.$message.warning('内容至少需要10个字符')
+        return
+      }
+      this.submitting = true
       try {
-        const res = await createPost(this.postForm)
+        const res = await createPost({
+          title: this.postForm.title.trim(),
+          content: this.postForm.content.trim()
+        })
         if (res.code === 200) {
-          this.$message.success('发布成功')
+          this.$message.success('发布成功！')
           this.showCreateDialog = false
           this.postForm = { title: '', content: '' }
           this.loadPostList()
         }
       } catch (error) {
-        this.$message.error('发布失败')
+        this.$message.error('发布失败，请稍后重试')
+      } finally {
+        this.submitting = false
       }
     },
     // 格式化时间
@@ -632,48 +677,195 @@ export default {
 
 /* 对话框样式 */
 ::v-deep .create-dialog .el-dialog {
-  background: rgba(26, 26, 62, 0.95);
-  backdrop-filter: blur(20px);
+  background: rgba(26, 26, 62, 0.98);
+  backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  overflow: hidden;
 }
 
 ::v-deep .create-dialog .el-dialog__header {
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px;
+  padding: 0;
+  border: none;
 }
 
-::v-deep .create-dialog .el-dialog__title {
-  color: white;
-  font-size: 20px;
-  font-weight: 600;
+::v-deep .create-dialog .el-dialog__headerbtn {
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+::v-deep .create-dialog .el-dialog__headerbtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+::v-deep .create-dialog .el-dialog__close {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
 }
 
 ::v-deep .create-dialog .el-dialog__body {
   background: transparent;
-  padding: 30px;
-}
-
-::v-deep .create-dialog .el-input__inner,
-::v-deep .create-dialog .el-textarea__inner {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
-::v-deep .create-dialog .el-input__inner::placeholder,
-::v-deep .create-dialog .el-textarea__inner::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-::v-deep .create-dialog .el-form-item__label {
-  color: rgba(255, 255, 255, 0.9);
+  padding: 0 40px 30px;
 }
 
 ::v-deep .create-dialog .el-dialog__footer {
   background: transparent;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 20px;
+  padding: 20px 40px;
+}
+
+/* 对话框头部 */
+.dialog-header {
+  text-align: center;
+  padding: 40px 40px 30px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0 -40px 30px;
+}
+
+.header-icon {
+  font-size: 48px;
+  color: #a8b5ff;
+  margin-bottom: 15px;
+  display: block;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.dialog-title {
+  margin: 0 0 10px;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #fff 0%, #a8b5ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dialog-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 表单样式 */
+.post-form {
+  margin-top: 20px;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.label-icon {
+  color: #a8b5ff;
+  font-size: 18px;
+}
+
+::v-deep .create-dialog .form-input .el-input__inner,
+::v-deep .create-dialog .form-textarea .el-textarea__inner {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 15px;
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.3s ease;
+}
+
+::v-deep .create-dialog .form-input .el-input__inner:focus,
+::v-deep .create-dialog .form-textarea .el-textarea__inner:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #a8b5ff;
+  box-shadow: 0 0 0 3px rgba(168, 181, 255, 0.2);
+}
+
+::v-deep .create-dialog .form-input .el-input__inner::placeholder,
+::v-deep .create-dialog .form-textarea .el-textarea__inner::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+::v-deep .create-dialog .el-input__count,
+::v-deep .create-dialog .el-textarea__inner + .el-input__count {
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  right: 12px;
+  bottom: 8px;
+}
+
+::v-deep .create-dialog .form-textarea .el-textarea__inner {
+  resize: vertical;
+  min-height: 150px;
+  line-height: 1.6;
+}
+
+/* 对话框底部按钮 */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 12px 24px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.cancel-btn i {
+  margin-right: 6px;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.submit-btn i {
+  margin-right: 6px;
 }
 
 /* 响应式设计 */
