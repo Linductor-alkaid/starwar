@@ -9,7 +9,8 @@
     </insert>
     
     <select id="selectList" resultType="com.starwar.entity.Post">
-        SELECT p.*, u.username
+        SELECT p.*, u.username,
+               (SELECT COUNT(*) FROM reply r WHERE r.post_id = p.id AND r.status = 1) AS reply_count
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         WHERE p.status = 1
@@ -18,7 +19,8 @@
     </select>
     
     <select id="selectById" resultType="com.starwar.entity.Post">
-        SELECT p.*, u.username, u.nickname
+        SELECT p.*, u.username, u.nickname,
+               (SELECT COUNT(*) FROM reply r WHERE r.post_id = p.id AND r.status = 1) AS reply_count
         FROM post p
         LEFT JOIN user u ON p.user_id = u.id
         WHERE p.id = #{id} AND p.status = 1

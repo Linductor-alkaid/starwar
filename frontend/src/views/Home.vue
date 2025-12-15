@@ -130,7 +130,10 @@ export default {
     handleLogout() {
       this.$store.dispatch('user/logout')
       this.$message.success('已退出登录')
-      this.$router.push('/')
+      // 如果当前不在首页，才进行导航
+      if (this.$route.path !== '/') {
+        this.$router.push('/')
+      }
     },
     // 卡片悬停效果
     handleCardHover(event, type) {

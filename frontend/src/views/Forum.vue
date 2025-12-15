@@ -804,12 +804,47 @@ export default {
   color: rgba(255, 255, 255, 0.5);
 }
 
-::v-deep .create-dialog .el-input__count,
-::v-deep .create-dialog .el-textarea__inner + .el-input__count {
-  color: rgba(255, 255, 255, 0.6);
-  background: transparent;
+/* 内容文本域的字数限制样式（正常工作的） */
+::v-deep .create-dialog .form-textarea .el-input__count,
+::v-deep .create-dialog .form-textarea .el-input__count-inner {
+  color: rgba(255, 255, 255, 0.6) !important;
+  background: transparent !important;
+  background-color: transparent !important;
   right: 12px;
   bottom: 8px;
+}
+
+/* 标题输入框的字数限制样式（参照内容的设置，修复 inner 类名） */
+::v-deep .create-dialog .form-input .el-input__count,
+::v-deep .create-dialog .form-input .el-input__count-inner,
+::v-deep .create-dialog .form-input .el-input__suffix .el-input__count,
+::v-deep .create-dialog .form-input .el-input__suffix .el-input__count-inner,
+::v-deep .create-dialog .form-input .el-input__suffix-inner .el-input__count,
+::v-deep .create-dialog .form-input .el-input__suffix-inner .el-input__count-inner {
+  color: rgba(255, 255, 255, 0.6) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+/* 兼容其他可能的选择器 */
+::v-deep .create-dialog .el-input__count,
+::v-deep .create-dialog .el-input__count-inner,
+::v-deep .create-dialog .el-textarea__inner + .el-input__count,
+::v-deep .create-dialog .el-textarea__inner + .el-input__count-inner,
+::v-deep .create-dialog .el-input .el-input__count,
+::v-deep .create-dialog .el-input .el-input__count-inner,
+::v-deep .create-dialog .el-textarea .el-input__count,
+::v-deep .create-dialog .el-textarea .el-input__count-inner {
+  color: rgba(255, 255, 255, 0.6) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
 }
 
 ::v-deep .create-dialog .form-textarea .el-textarea__inner {
