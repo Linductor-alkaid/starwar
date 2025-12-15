@@ -58,6 +58,18 @@
             <version>0.9.1</version>
         </dependency>
 
+        <!-- JAXB API (Java 9+需要单独添加) -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
         <!-- BCrypt -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
